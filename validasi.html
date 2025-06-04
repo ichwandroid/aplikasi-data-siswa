@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Validasi Data Siswa</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 15px; border-radius: 10px; max-width: 500px; background: #f0f8ff; }
+    .row { margin: 8px 0; }
+    .label { font-weight: bold; }
+    button { margin-top: 15px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Validasi Data Siswa</h2>
+  <div id="hasil"></div>
+  <button id="konfirmasiBtn" onclick="konfirmasi()" style="display:none;">✔️ Saya sudah memeriksa dan data saya benar</button>
+
+  <script>
+    // 🔧 Ganti dengan konfigurasi Firebase kamu
+    const firebaseConfig = {
+      apiKey: "AIzaSyCqbNiMv_9kJJdAhG_l7VsFnV2vvYGduck",
+  authDomain: "cekdatasiswa.firebaseapp.com",
+  projectId: "cekdatasiswa"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const nisn = urlParams.get("nisn");
+    const hasil = document.getElementById("hasil");
+    const konfirmasiBtn = document.getElementById("konfirmasiBtn");
+    let docId = null;
+
+    async function loadData() {
+      if (!nisn) {
+        hasil.innerHTML = "❌ NISN tidak ditemukan di URL.";
+        return;
+      }
+
+      const snapshot = await db.collection("dataSiswa").where("NISN", "==", nisn).get();
+      if (snapshot.empty) {
+        hasil.innerHTML = "❌ Data siswa tidak ditemukan.";
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        docId = doc.id;
+        hasil.innerHTML = `
+          <div class="card">
+            <div class="row"><span class="label">Nama:</span> ${data.Nama}</div>
+            <div class="row"><span class="label">NISN:</span> ${data.NISN}</div>
+            <div class="row"><span class="label">NIK:</span> ${data.NIK}</div>
+            <div class="row"><span class="label">Tempat Lahir:</span> ${data["Tempat Lahir"]}</div>
+            <div class="row"><span class="label">Tanggal Lahir:</span> ${data["Tanggal Lahir"]}</div>
+            <div class="row"><span class="label">Alamat:</span> ${data["Alamat"]}</div>
+          </div>
+        `;
+        if (data.disetujui) {
+          konfirmasiBtn.style.display = "none";
+          hasil.innerHTML += `<p style="color:green;">✅ Data sudah dikonfirmasi pada ${data.waktuKonfirmasi}</p>`;
+        } else {
+          konfirmasiBtn.style.display = "inline-block";
+        }
+      });
+    }
+
+    async function konfirmasi() {
+      if (!docId) return;
+      const now = new Date().toISOString();
+      await db.collection("dataSiswa").doc(docId).update({
+        disetujui: true,
+        waktuKonfirmasi: now
+      });
+      konfirmasiBtn.disabled = true;
+      konfirmasiBtn.innerText = "✔️ Terima kasih, data Anda sudah dikonfirmasi.";
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
