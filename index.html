@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CRUD Firebase</title>
+    <title>Database Siswa Kelas 6 SD Anak Saleh</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css"
@@ -15,16 +15,55 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   </head>
   <body>
-    <h1>CRUD Firebase Web</h1>
+    <div class="container">
+      <section class="section">
+        <h1 class="title">Database Siswa Kelas 6 SD Anak Saleh</h1>
+        <h2 class="subtitle">
+          Aplikasi ini digunakan untuk memvalidasi data siswa kelas 6 SD Anak Saleh.
+          Silakan cek data Anda di bawah ini.
+        </h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>NISN</th>
+              <th>Nama</th>
+              <th>Kelas</th>
+              <th>Jenis Kelamin</th>
+              <th>Alamat</th>
+            </tr>
+          </thead>
+          <tbody id="dataSiswa">
+            <!-- Data siswa akan dimuat di sini -->
+          </tbody>
+        </table>
+      </section>
+    </div>
+    <script>
+      // 🔧 Ganti dengan konfigurasi Firebase kamu
+      const firebaseConfig = {
+        apiKey: "AIzaSyCqbNiMv_9kJJdAhG_l7VsFnV2vvYGduck",
+        authDomain: "cekdatasiswa.firebaseapp.com",
+        projectId: "cekdatasiswa",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
 
-    <form id="form">
-      <input type="text" id="nama" placeholder="Nama" required />
-      <input type="number" id="umur" placeholder="Umur" required />
-      <button type="submit">Tambah</button>
-    </form>
-
-    <ul id="data-list"></ul>
-
-    <script src="script.js"></script>
+      // Mendapatkan data siswa dari Firestore
+      db.collection("siswa").get().then((querySnapshot) => {
+        const dataSiswa = document.getElementById("dataSiswa");
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${data.NISN}</td>
+            <td>${data.Nama}</td>
+            <td>${data.NIK}</td>
+          `;
+          dataSiswa.appendChild(row);
+        });
+      }).catch((error) => {
+        console.error("Error getting documents: ", error);
+      });
+    </script>
   </body>
 </html>
