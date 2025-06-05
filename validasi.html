@@ -1,86 +1,170 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Validasi Data Siswa</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .card { border: 1px solid #ccc; padding: 15px; border-radius: 10px; max-width: 500px; background: #f0f8ff; }
-    .row { margin: 8px 0; }
-    .label { font-weight: bold; }
-    button { margin-top: 15px; padding: 10px 20px; font-size: 16px; }
-  </style>
-</head>
-<body>
-  <h2>Validasi Data Siswa</h2>
-  <div id="hasil"></div>
-  <button id="konfirmasiBtn" onclick="konfirmasi()" style="display:none;">✔️ Saya sudah memeriksa dan data saya benar</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validasi Data Siswa</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css"
+    />
+    <link rel="stylesheet" href="css/regular.min.css" />
+    <link rel="stylesheet" href="css/fontawesome.min.css" />
+  </head>
+  <body>
+    <div class="container is-max-tablet">
+      <section class="section">
+        <h1 class="title">Validasi Biodata Siswa</h1>
+        <h2 class="subtitle">
+          Aplikasi validasi biodata siswa kelas 6 SD Anak Saleh,
+          <strong>Silakan cek data Anda di bawah ini.</strong>
+        </h2>
+        <article class="panel is-success" id="hasil"></article>
+        <div class="card">
+          <header class="card-header">
+            <p class="card-header-title">
+              Silakan periksa data Anda di atas. Jika sudah benar, klik tombol
+              di bawah ini untuk mengonfirmasi. Jika ada kesalahan, silakan
+              hubungi pihak sekolah. Terima Kasih
+            </p>
+          </header>
+        </div>
+        <button
+          class="button is-success is-fullwidth"
+          id="konfirmasiBtn"
+          onclick="konfirmasi()"
+          style="display: none"
+        >
+          <i class="fa-regular fa-square-check"></i> Saya sudah memeriksa dan
+          data saya benar
+        </button>
+      </section>
+    </div>
 
-  <script>
-    // 🔧 Ganti dengan konfigurasi Firebase kamu
-    const firebaseConfig = {
-      apiKey: "AIzaSyCqbNiMv_9kJJdAhG_l7VsFnV2vvYGduck",
-  authDomain: "cekdatasiswa.firebaseapp.com",
-  projectId: "cekdatasiswa"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <script>
+      // 🔧 Ganti dengan konfigurasi Firebase kamu
+      const firebaseConfig = {
+        apiKey: "AIzaSyCqbNiMv_9kJJdAhG_l7VsFnV2vvYGduck",
+        authDomain: "cekdatasiswa.firebaseapp.com",
+        projectId: "cekdatasiswa",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const nisn = urlParams.get("nisn");
-    const hasil = document.getElementById("hasil");
-    const konfirmasiBtn = document.getElementById("konfirmasiBtn");
-    let docId = null;
+      const urlParams = new URLSearchParams(window.location.search);
+      const nisn = urlParams.get("nisn");
+      const hasil = document.getElementById("hasil");
+      const konfirmasiBtn = document.getElementById("konfirmasiBtn");
+      let docId = null;
 
-    async function loadData() {
-      if (!nisn) {
-        hasil.innerHTML = "❌ NISN tidak ditemukan di URL.";
-        return;
-      }
-
-      const snapshot = await db.collection("dataSiswa").where("NISN", "==", nisn).get();
-      if (snapshot.empty) {
-        hasil.innerHTML = "❌ Data siswa tidak ditemukan.";
-        return;
-      }
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        docId = doc.id;
-        hasil.innerHTML = `
-          <div class="card">
-            <div class="row"><span class="label">Nama:</span> ${data.Nama}</div>
-            <div class="row"><span class="label">NISN:</span> ${data.NISN}</div>
-            <div class="row"><span class="label">NIK:</span> ${data.NIK}</div>
-            <div class="row"><span class="label">Tempat Lahir:</span> ${data["Tempat Lahir"]}</div>
-            <div class="row"><span class="label">Tanggal Lahir:</span> ${data["Tanggal Lahir"]}</div>
-            <div class="row"><span class="label">Nama Ibu Kandung:</span> ${data["Ibu Kandung"]}</div>
-            <div class="row"><span class="label">Alamat:</span> ${data["Alamat"]}</div>
-          </div>
-        `;
-        if (data.disetujui) {
-          konfirmasiBtn.style.display = "none";
-          hasil.innerHTML += `<p style="color:green;">✅ Data sudah dikonfirmasi pada ${data.waktuKonfirmasi}</p>`;
-        } else {
-          konfirmasiBtn.style.display = "inline-block";
+      async function loadData() {
+        if (!nisn) {
+          hasil.innerHTML = "❌ NISN tidak ditemukan di URL.";
+          return;
         }
-      });
-    }
 
-    async function konfirmasi() {
-      if (!docId) return;
-      const now = new Date().toISOString();
-      await db.collection("dataSiswa").doc(docId).update({
-        disetujui: true,
-        waktuKonfirmasi: now
-      });
-      konfirmasiBtn.disabled = true;
-      konfirmasiBtn.innerText = "✔️ Terima kasih, data Anda sudah dikonfirmasi.";
-    }
+        const snapshot = await db
+          .collection("dataSiswa")
+          .where("NISN", "==", nisn)
+          .get();
+        if (snapshot.empty) {
+          hasil.innerHTML = "❌ Data siswa tidak ditemukan.";
+          return;
+        }
 
-    loadData();
-  </script>
-</body>
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          docId = doc.id;
+          hasil.innerHTML = `
+          
+            
+              <p class="panel-heading">Biodata Siswa</p>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <strong>Nama Siswa:</strong> <span style="padding-left: 5px;">${data.Nama}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-id-card"></i>
+                </span>
+                <strong>NISN:</strong> <span style="padding-left: 5px;">${data.NISN}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-address-card"></i>
+                </span>
+                <strong>NIK:</strong> <span style="padding-left: 5px;">${data.NIK}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-map"></i>
+                </span>
+                <strong>Tempat Lahir:</strong> <span style="padding-left: 5px;">${data["Tempat Lahir"]}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-calendar-days"></i>
+                </span>
+                <strong>Tanggal Lahir:</strong> <span style="padding-left: 5px;">${data["Tanggal Lahir"]}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-face-grin-hearts"></i>
+                </span>
+                <strong>Nama Ibu Kandung:</strong> <span style="padding-left: 5px;">${data["Ibu Kandung"]}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-face-grin-stars"></i>
+                </span>
+                <strong>Nama Ayah Kandung:</strong> <span style="padding-left: 5px;">${data["Bapak Kandung"]}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-compass"></i>
+                </span>
+                <strong>Alamat:</strong> <span style="padding-left: 5px;">${data["Alamat"]}</span>
+              </a>
+              <a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-address-book"></i>
+                </span>
+                <strong>Nomer HP:</strong> <span style="padding-left: 5px;">${data["Nomer HP"]}</span>
+              </a>
+            
+
+        `;
+          if (data.disetujui) {
+            konfirmasiBtn.style.display = "none";
+            hasil.innerHTML += `<a class="panel-block is-active">
+                <span class="panel-icon">
+                  <i class="fa-regular fa-square-check"></i>
+                </span>
+                <strong>Status sudah divalidasi pada <span style="padding-left: 5px;">${data.waktuKonfirmasi}</strong></span>
+              </a>`;
+          } else {
+            konfirmasiBtn.style.display = "inline-block";
+          }
+        });
+      }
+
+      async function konfirmasi() {
+        if (!docId) return;
+        const now = new Date().toISOString();
+        await db.collection("dataSiswa").doc(docId).update({
+          disetujui: true,
+          waktuKonfirmasi: now,
+        });
+        konfirmasiBtn.disabled = true;
+        konfirmasiBtn.innerText =
+          "✔️ Terima kasih, data Anda sudah dikonfirmasi.";
+      }
+
+      loadData();
+    </script>
+  </body>
 </html>
