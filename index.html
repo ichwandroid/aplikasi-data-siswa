@@ -8,6 +8,8 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css"
     />
+    <link rel="stylesheet" href="css/regular.min.css" />
+    <link rel="stylesheet" href="css/fontawesome.min.css" />
 
     <!-- 1. Firebase SDK App -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -22,20 +24,36 @@
           Aplikasi ini digunakan untuk memvalidasi data siswa kelas 6 SD Anak Saleh.
           Silakan cek data Anda di bawah ini.
         </h2>
-        <table class="table">
+
+        <!-- Tambah fitur pencarian -->
+        <div class="field">
+          <p class="control has-icons-left">
+            <input class="input" type="text" id="searchInput" placeholder="Cari siswa...">
+            <span class="icon is-small is-left">
+              <i class="fa-regular fa-circle-right"></i>
+            </span>
+          </p>
+        </div>
+
+        <table class="table is-striped is-hoverable is-fullwidth">
           <thead>
             <tr>
-              <th>NISN</th>
-              <th>Nama</th>
-              <th>Kelas</th>
-              <th>Jenis Kelamin</th>
-              <th>Alamat</th>
+              <th onclick="sortTable(0)">NISN ↕️</th>
+              <th onclick="sortTable(1)">Nama ↕️</th>
+              <th onclick="sortTable(2)">Status ↕️</th>
+              <th onclick="sortTable(3)">Waktu Konfirmasi ↕️</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody id="dataSiswa">
             <!-- Data siswa akan dimuat di sini -->
           </tbody>
         </table>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="has-text-centered is-hidden">
+          <button class="button is-loading">Loading</button>
+        </div>
       </section>
     </div>
     <script>
@@ -48,22 +66,73 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
 
+      // Fungsi untuk menampilkan data
+      function displayData(data, docId) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${data.NISN || '-'}</td>
+          <td>${data.Nama || '-'}</td>
+          <td class="is-capitalized">${data.disetujui || 'Pending'}</td>
+          <td>${data.waktudisetujui || 'Pending'}</td>
+          <td>
+            <a href="validasi.html?nisn=${data.NISN}" 
+               class="button is-small is-info">
+              Detail
+            </a>
+          </td>
+        `;
+        return row;
+      }
+
+      // Fungsi untuk pencarian
+      document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        const searchText = e.target.value.toLowerCase();
+        const rows = document.getElementById('dataSiswa').getElementsByTagName('tr');
+        
+        Array.from(rows).forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(searchText) ? '' : 'none';
+        });
+      });
+
+      // Fungsi untuk pengurutan
+      function sortTable(columnIndex) {
+        const table = document.getElementById('dataSiswa');
+        const rows = Array.from(table.getElementsByTagName('tr'));
+        const isAscending = table.getAttribute('data-order') === 'asc';
+        
+        rows.sort((a, b) => {
+          const aValue = a.getElementsByTagName('td')[columnIndex].textContent;
+          const bValue = b.getElementsByTagName('td')[columnIndex].textContent;
+          return isAscending ? 
+            aValue.localeCompare(bValue) : 
+            bValue.localeCompare(aValue);
+        });
+        
+        rows.forEach(row => table.appendChild(row));
+        table.setAttribute('data-order', isAscending ? 'desc' : 'asc');
+      }
+
+      // Tampilkan loading
+      document.getElementById('loading').classList.remove('is-hidden');
+
       // Mendapatkan data siswa dari Firestore
-      db.collection("siswa").get().then((querySnapshot) => {
+      db.collection("dataSiswa").get().then((querySnapshot) => {
         const dataSiswa = document.getElementById("dataSiswa");
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${data.NISN}</td>
-            <td>${data.Nama}</td>
-            <td>${data.NIK}</td>
-          `;
+          const row = displayData(data, doc.id);
           dataSiswa.appendChild(row);
         });
+        // Sembunyikan loading
+        document.getElementById('loading').classList.add('is-hidden');
       }).catch((error) => {
         console.error("Error getting documents: ", error);
+        document.getElementById('loading').classList.add('is-hidden');
       });
     </script>
+
+    <!-- Tambahkan Font Awesome untuk ikon -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
   </body>
 </html>
